@@ -59,9 +59,6 @@ namespace battleship_simple
             enemyBoard.InitializeBoard();
             enemyBoard.IsPlayer = false;
 
-            playerBoard.SetShip(0, 0, 0, 4);
-            enemyBoard.SetShip(0, 0, 0, 4);
-
             // Reset possible guesses
             enemyGuesses.Clear();
             int nGuesses = GameBoard.boardSize * GameBoard.boardSize;
@@ -69,11 +66,11 @@ namespace battleship_simple
                 enemyGuesses.Add(i);
         }
 
-        static void ParsePlayerAttack(out string guess, out int x, out int y)
+        static void ParsePlayerCoordinate(string messagePrompt, out string guess, out int col, out int row)
         {
-            Console.WriteLine("Attack which cell? (ex: b4)");
             while (true)
             {
+                Console.WriteLine(messagePrompt);
                 string input = Console.ReadLine();
                 if (input == null)
                     continue;
@@ -82,24 +79,31 @@ namespace battleship_simple
                 input = input.ToLower();
                 char letter = input[0];
                 string number = input[1].ToString();
-                int letterAsNumber = (letter - 97);
+                int letterAsNumber = (letter - 'a');
                 bool success = int.TryParse(number, out int numberAsNumber);
                 if (!success)
                     continue;
                 // Assign out values
-                x = letterAsNumber;
-                y = numberAsNumber;
+                col = letterAsNumber;
+                row = numberAsNumber;
                 guess = input;
                 break;
             }
+        }
+
+        static void AwaitPlayerConfirm(string message = "Press enter key to continue.")
+        {
+            Console.WriteLine(message);
+            Console.ReadLine();
         }
 
         static bool PlayerGuess()
         {
             while (true)
             {
-                ParsePlayerAttack(out string guess, out int row, out int col);
-                bool success = enemyBoard.Guess(row, col, out bool hitShip);
+                const string message = "Attack which cell? (ex: b4)";
+                ParsePlayerCoordinate(message, out string guess, out int col, out int row);
+                bool success = enemyBoard.Guess(col, row, out bool hitShip);
                 if (!success)
                 {
                     Console.WriteLine($"Already guessed {guess}. Guess another cell.");
@@ -122,8 +126,34 @@ namespace battleship_simple
         {
             while (true)
             {
+                if (playerBoard.PlaceableShips.Count == 0)
+                    break;
+
+                playerBoard.DrawGameBoard();
+                Console.WriteLine();
+                enemyBoard.DrawGameBoard();
+                Console.WriteLine();
+
                 playerBoard.PrintPlaceableShips();
-                Console.ReadLine();
+
+                const string message0 = "Set piece start coordinate. (ex: A0)";
+                ParsePlayerCoordinate(message0, out string guess0, out int col0, out int row0);
+                const string message1 = "Set piece end coordinate. (ex: A4)";
+                ParsePlayerCoordinate(message1, out string guess1, out int col1, out int row1);
+
+                bool success = playerBoard.SetShip(col0, row0, col1, row1);
+                var cell = playerBoard.GetCell(row0, col0);
+
+                if (success)
+                {
+                    Console.WriteLine($"Placed {cell.Ship.Name} at {guess0} to {guess1}.");
+                    AwaitPlayerConfirm();
+                }
+                else
+                {
+                    Console.WriteLine("Could not place ship.");
+                    AwaitPlayerConfirm();
+                }
             }
         }
 
@@ -294,6 +324,7 @@ namespace battleship_simple
                 }
             }
 
+            // TODO: error codes
             public bool SetShip(int x0, int y0, int x1, int y1)
             {
                 bool isInSameCol = x0 == x1;
@@ -309,12 +340,13 @@ namespace battleship_simple
 
                 int lengthX = maxX - minX;
                 int lengthY = maxY - minY;
-                int length = lengthX + lengthY;
+                int length = lengthX + lengthY + 1;
                 bool isHorizontal = lengthY == 0;
 
                 bool success = GetPlaceableShip(length, out Ship? ship);
                 if (!success)
                     return false;
+                PlaceableShips.Remove(ship);
 
                 int index = 0;
                 for (int x = minX; x <= maxX; x++)
@@ -368,20 +400,21 @@ namespace battleship_simple
 
             private string GetShipDisplay(bool isHorizontal, int index, int length)
             {
+                int maxIndex = length - 1;
                 if (isHorizontal)
                 {
                     if (index == 0)
-                        return "<";
-                    else if (index == length)
-                        return ">";
+                        return "<=";
+                    else if (index == maxIndex)
+                        return "=>";
                     else
-                        return "=";
+                        return "==";
                 }
                 else
                 {
                     if (index == 0)
                         return @"/\";
-                    else if (index == length)
+                    else if (index == maxIndex)
                         return @"\/";
                     else
                         return @"||";
