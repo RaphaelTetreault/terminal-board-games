@@ -4,7 +4,7 @@ namespace battleship
 {
     internal class Program
     {
-        const bool debug_seeOpponentShips = true;
+        const bool debug_seeOpponentShips = false;
         const int boardWidth = 10;
         const int boardHeight = 10;
         static int playerShipsSunk = 0;

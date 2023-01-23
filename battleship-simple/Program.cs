@@ -1,5 +1,5 @@
 ﻿// 2 hours, 3:32 to 5:22 + 0:18
-// 
+// +45min (ish) to add player parse place ships (?) with debugging stuff
 
 namespace battleship_simple
 {
