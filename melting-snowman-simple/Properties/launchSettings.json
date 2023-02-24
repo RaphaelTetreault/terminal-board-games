@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    },
+    "melting-snowman-simple": {
+      "commandName": "Project"
+    }
+  }
+}

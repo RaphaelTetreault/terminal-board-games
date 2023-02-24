@@ -1,113 +1,193 @@
-﻿// 12:07 to 12:30
-// 03:50 to 3:53
-// 03:53 to 4:05 - nicify
+﻿// Written from 4:15 to 5:15
 
-namespace MeltingSnowmanSimple
+namespace melting_snowman
 {
     internal class Program
     {
+        public static readonly Random random = new Random();
+        public static readonly string[] Answers = new string[]
+        {
+            "Hello, World!",
+            "To be or not to be",
+            "supercalifragilisticexpialidocious",
+        };
+
         static void Main(string[] args)
         {
-            // INIT
-            string[] answers = new string[] { "my guess" };
-            Random random = new Random();
-            int index = random.Next(answers.Length);
-            string answer = answers[index];
-            int guessesRemaining = 7;
-            char[] displayChars = new char[answer.Length];
-
-            // Set default string value for display
-            for (int i = 0; i < answer.Length; i++)
-            {
-                char c = answer[i];
-                if (c == ' ')
-                {
-                    displayChars[i] = ' ';
-                }
-                else
-                {
-                    displayChars[i] = '_';
-                }
-            }
-
-            // COPY PASTED
-            for (int i = 0; i < displayChars.Length; i++)
-                Console.Write(" " + displayChars[i]);
-            Console.WriteLine();
-
-            // GAME LOOP
             while (true)
             {
-                Console.WriteLine("Guess letter:");
-                string guess = Console.ReadLine();
-                guess = guess.ToLower();
+                RunGame();
+            }
+        }
 
-                // CHECK: single character input
-                bool isOneCharacter = guess.Length == 1;
-                if (!isOneCharacter)
-                {
-                    Console.WriteLine("Guess must be 1 character long!");
-                    continue;
-                }
+        public static void RunGame()
+        {
+            bool[] guessedIndexes = new bool[26];
+            int randomIndex = random.Next(Answers.Length);
+            string answer = Answers[randomIndex];
+            int guessesRemaining = 7;
 
-                // CHECK: is a lower case letter a-z
-                char character = guess[0];
-                bool isLetter = character >= 'a' && character <= 'z'; // 97, 122
-                if (!isLetter)
-                {
-                    Console.WriteLine("Guess must be a letter!");
-                    continue;
-                }
+            while (true)
+            {
+                // Print active guesses
+                Console.Clear();
+                PrintAnswerGuesses(guessedIndexes, answer);
 
-                // CHECK: right or wrong?
-                bool guessIsRight = answer.Contains(character);
-                if (guessIsRight)
+                // Get player's guess
+                char guess = GetPlayerGuess(guessedIndexes);
+
+                // Reset screen, print guesses with newly guessed char (if applicable)
+                Console.Clear();
+                PrintAnswerGuesses(guessedIndexes, answer);
+
+                // Show user if correct or not
+                bool isCorrect = answer.ToLower().Contains(guess);
+                if (isCorrect)
                 {
-                    for (int i = 0; i < answer.Length; i++)
-                    {
-                        bool isRight = answer[i] == character;
-                        if (isRight)
-                        {
-                            displayChars[i] = character;
-                        }
-                    }
-                    Console.WriteLine($"'{character}' is correct!");
+                    Console.WriteLine($"'{guess}' is correct!");
                 }
                 else
                 {
                     guessesRemaining--;
-                    Console.WriteLine($"'{character}' is wrong. Remaining guesses: {guessesRemaining}.");
+                    Console.WriteLine($"'{guess}' is incorrect!");
                 }
 
-                // Print to screen
-                for (int i = 0; i < displayChars.Length; i++)
-                    Console.Write(" " + displayChars[i]);
-                Console.WriteLine();
-
-                // CHECK: has guessed word/sentence?
-                string known = "";
-                for (int i = 0; i < displayChars.Length; i++)
-                    known += displayChars[i];
-                bool isCorrect = answer == known;
-                if (isCorrect)
+                // Check for win
+                bool isWinner = IsWinner(guessedIndexes, answer);
+                if (isWinner)
                 {
                     Console.WriteLine("You win!");
+                    PromptPressEnter();
                     break;
                 }
-
-                // CHECK: player out of guesses?
-                bool playerLose = guessesRemaining == 0;
-                if (playerLose)
+                // Check for lose
+                bool isLoser = guessesRemaining <= 0;
+                if (isLoser)
                 {
                     Console.WriteLine("You lose!");
+                    PromptPressEnter();
                     break;
                 }
-            }
 
-            // Close nicely
-            Console.WriteLine("Press any key to end game");
-            Console.Read();
+                // Tell user remaining guesses
+                Console.WriteLine($"You have {guessesRemaining} more guess{(guessesRemaining != 1 ? "" : "es")}.");
+
+                // Get ready for next cycle
+                PromptPressEnter();
+            }
         }
 
+        public static bool IsLowerCaseLetter(char character)
+        {
+            bool isLetter = character >= 'a' && character <= 'z';
+            return isLetter;
+        }
+
+        public static void PromptPressEnter()
+        {
+            Console.WriteLine("Press ENTER to continue.");
+            Console.ReadLine();
+        }
+
+        public static void PrintAnswerGuesses(bool[] letterGuessed, string answer)
+        {
+            string lowerCaseAnswer = answer.ToLower();
+
+            for (int i = 0; i < answer.Length; i++)
+            {
+                char cClean = lowerCaseAnswer[i];
+                char cOriginal = answer[i];
+
+                bool isLetter = IsLowerCaseLetter(cClean);
+                if (!isLetter)
+                {
+                    PrintCharSpaced(cOriginal, ConsoleColor.Black);
+                    continue;
+                }
+
+                int characterIndex = cClean - 'a';
+                bool isGuessed = letterGuessed[characterIndex];
+                if (isGuessed)
+                {
+                    PrintCharSpaced(cOriginal, ConsoleColor.DarkGreen);
+                }
+                else
+                {
+                    PrintCharSpaced(' ', ConsoleColor.DarkGray);
+                }
+            }
+            Console.WriteLine();
+        }
+
+        public static void PrintCharSpaced(char character, ConsoleColor bgColor = ConsoleColor.Black)
+        {
+            Console.BackgroundColor = bgColor;
+            Console.Write(' ');
+            Console.Write(character);
+            Console.Write(' ');
+            Console.ResetColor();
+            Console.Write(' ');
+        }
+
+        public static char GetPlayerGuess(bool[] guesses)
+        {
+            while (true)
+            {
+                Console.WriteLine("Guess a letter:");
+                string input = Console.ReadLine();
+                bool isNullOrEmpty = string.IsNullOrEmpty(input);
+                if (isNullOrEmpty)
+                {
+                    Console.WriteLine("Answer cannot be empty.");
+                    continue;
+                }
+
+                bool isNotExactly1Char = input.Length != 1;
+                if (isNotExactly1Char)
+                {
+                    Console.WriteLine("Answer must be 1 character.");
+                    continue;
+                }
+
+                char letter = input[0];
+                bool isNotLetter = !IsLowerCaseLetter(letter);
+                if (isNotLetter)
+                {
+                    Console.WriteLine("Answer must be a letter.");
+                    continue;
+                }
+
+                int index = letter - 'a';
+                bool hasBeenGuessed = guesses[index];
+                if (hasBeenGuessed)
+                {
+                    Console.WriteLine($"You already guessed '{letter}'.");
+                    continue;
+                }
+
+                // Set guess in array
+                guesses[index] = true;
+                return letter;
+            }
+        }
+
+        public static bool IsWinner(bool[] guesses, string answer)
+        {
+            answer = answer.ToLower();
+            for (int i = 0; i < answer.Length; i++)
+            {
+                char character = answer[i];
+                bool isLetter = IsLowerCaseLetter(character);
+                if (!isLetter)
+                    continue;
+
+                int index = character - 'a';
+                bool isGuessed = guesses[index];
+                if (!isGuessed)
+                    return false;
+            }
+
+            return true;
+        }
     }
 }
