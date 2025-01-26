@@ -182,7 +182,7 @@ namespace wordle
             while (true)
             {
                 Console.WriteLine("Guess a 5 letter word.");
-                string input = Console.ReadLine();
+                string input = Console.ReadLine()!;
 
                 // Weed out bad input and try guessing again.
                 if (string.IsNullOrEmpty(input))
@@ -229,7 +229,7 @@ namespace wordle
             if (string.IsNullOrEmpty(dirName))
                 return new string[0];
 
-            // Check to see if we are running a debug build. This is a biit hacky,
+            // Check to see if we are running a debug build. This is a bit hacky,
             // but checking for "net" is a fine way to check for "net.7.0" and other
             // .NET versions of build output.
             bool isDebugBuild = dirName.Contains("net", StringComparison.Ordinal);
